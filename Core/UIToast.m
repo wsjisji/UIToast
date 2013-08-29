@@ -24,7 +24,6 @@
     [super dealloc];
 }
 
-
 - (void)showToast:(NSString*)text tiemInterval:(float)time
 {
     [self showToast:text tiemInterval:time backGroundRes:nil];
@@ -38,9 +37,11 @@
     if (time < 2)
         time = 2;
     
-    
+    //Generate the toast view, controller is only for solving rotation problems.
     UIRotateViewController *controller = [[UIRotateViewController alloc] init];
     [controller setShowText:text andBgResPath:bgResPath];
+    
+    //Add toast view to key windows.
     [[[[[UIApplication sharedApplication] keyWindow] subviews] objectAtIndex:0] addSubview:controller.view];
     controller.view.alpha = 0.0;
     [UIView animateWithDuration:0.5 animations:^{
@@ -50,6 +51,8 @@
             [UIView animateWithDuration:0.5 animations:^{
                 controller.view.alpha = 0;
             } completion:^(BOOL finished) {
+                
+                //Release after animation finshed.
                 [controller.view removeFromSuperview];
                 [controller release];
             }];

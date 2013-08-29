@@ -8,6 +8,7 @@
 
 #import "UIRotateViewController.h"
 #import <QuartzCore/CALayer.h>
+#define TOAST_MAX_WIDTH 200
 
 @interface UIRotateViewController ()
 
@@ -27,20 +28,15 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view.
     [self initLabel];
     [self.view setBackgroundColor:[UIColor clearColor]];
     
+    //Register device orientation notifications.
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(orientationChanged:)
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
-}
-
-- (void)orientationChanged:(NSNotification *)notification
-{
-    [self setShowText:_text andBgResPath:_bgRes];
 }
 
 - (void)dealloc
@@ -49,11 +45,17 @@
     [self releaseLabel];
 }
 
-
-- (void)didReceiveMemoryWarning
+- (void)viewDidDisappear:(BOOL)animated
 {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    [super viewDidDisappear:animated];
+    
+    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+    [[NSNotificationCenter defaultCenter] removeObserver:self forKeyPath:UIDeviceOrientationDidChangeNotification];
+}
+
+- (void)orientationChanged:(NSNotification *)notification
+{
+    [self fitScreenSize];
 }
 
 - (void)initLabel
@@ -69,6 +71,13 @@
     _label.layer.masksToBounds = YES;
 }
 
+- (void)releaseLabel
+{
+    [_label removeFromSuperview];
+    [_label release];
+    _label = nil;
+}
+
 - (void)setShowText:(NSString*)text andBgResPath:(NSString*)bgResPath
 {
     [_text release];
@@ -76,7 +85,16 @@
     
     _text = text.copy;
     _bgRes = bgResPath.copy;
+    
+    [self fitScreenSize];
+}
 
+- (void)fitScreenSize
+{
+    if (nil == _text || nil == _bgRes)
+        return;
+    
+    //Cacluate screen width and screen height.
     float screenWidth = [UIScreen mainScreen].bounds.size.width;
     float screenHeight = [UIScreen mainScreen].bounds.size.height;
     int max = MAX(screenWidth, screenHeight);
@@ -91,53 +109,21 @@
         screenWidth = min;
     }
     
-    float maxWidth = 200;
-    //高度
-    CGSize size = [text sizeWithFont:[UIFont systemFontOfSize:18.0]];
-    int lineNumber = size.width / maxWidth + 1;
-    float viewWidth = 1 == lineNumber ? size.width : maxWidth + 10 * lineNumber;
+    //Caculate text size.
+    CGSize size = [_text sizeWithFont:[UIFont systemFontOfSize:18.0]];
+    int lineNumber = size.width / TOAST_MAX_WIDTH + 1;
+    float viewWidth = 1 == lineNumber ? size.width : TOAST_MAX_WIDTH + 10 * lineNumber;
     float viewHeight = lineNumber * size.height;
     [self.view setFrame:CGRectMake((screenWidth - viewWidth) / 2, (screenHeight / 4) * 3 - viewHeight / 2, viewWidth, viewHeight)];
-    NSLog(@"self.view = %@", self.view);
     [_label setFrame:CGRectMake(0, 0, viewWidth, viewHeight)];
-    NSLog(@"_label = %@", _label);
-    [_label setText:text];
+    [_label setText:_text];
     _label.numberOfLines = lineNumber;
-        
-    if (nil != bgResPath)
+    
+    //Set toast's background image if needed.
+    if (nil != _bgRes)
     {
-        [_label setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:bgResPath]]];
+        [_label setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:_bgRes]]];
     }
-//    [self.view setFrame:CGRectMake(100, 200, 300, 200)];
     [self.view addSubview:_label];
 }
-
-- (void)releaseLabel
-{
-    [_label removeFromSuperview];
-    [_label release];
-    _label = nil;
-}
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    return YES;
-}
-
-
-- (BOOL)shouldAutorotate {
-    
-    return YES;
-}
-
-- (NSUInteger)supportedInterfaceOrientations {
-    
-    return UIInterfaceOrientationMaskAll;
-}
-
-- (void) willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
-{
-    [self setShowText:_text andBgResPath:_bgRes];
-}
-
 @end
