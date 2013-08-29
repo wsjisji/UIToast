@@ -91,7 +91,7 @@
 
 - (void)fitScreenSize
 {
-    if (nil == _text || nil == _bgRes)
+    if (nil == _text)
         return;
     
     //Cacluate screen width and screen height.
@@ -103,10 +103,13 @@
     {
         screenHeight = min;
         screenWidth = max;
-    }else
+    }else if (UIDeviceOrientationIsPortrait([UIDevice currentDevice].orientation))
     {
         screenHeight = max;
         screenWidth = min;
+    }else
+    {
+        return;
     }
     
     //Caculate text size.
